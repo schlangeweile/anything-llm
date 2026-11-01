@@ -226,14 +226,14 @@ export default function ActiveWorkspaces() {
                             <div
                               data-tooltip-id="workspace-name"
                               data-tooltip-content={workspace.name}
-                              className="flex items-center space-x-2 overflow-hidden flex-grow"
+                              className="flex items-center space-x-2 overflow-hidden flex-grow min-w-0"
                             >
-                              <div className="w-[130px] overflow-hidden">
+                              <div className="min-w-0 flex-1 overflow-hidden">
                                 <p
                                   className={`
                                   text-[14px] leading-loose whitespace-nowrap overflow-hidden
                                   ${isActive ? "font-bold text-white light:text-blue-900" : "font-medium "} truncate
-                                  w-full group-hover:w-[130px] group-hover:duration-200
+                                  w-full
                                 `}
                                 >
                                   {workspace.name}
