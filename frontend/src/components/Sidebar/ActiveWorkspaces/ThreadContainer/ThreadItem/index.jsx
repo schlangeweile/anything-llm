@@ -24,11 +24,11 @@ export default function ThreadItem({
   const workspaceSlug = workspace?.slug ?? urlSlug;
   const optionsContainer = useRef(null);
   const [showOptions, setShowOptions] = useState(false);
-  const linkTo = thread.virtual
-    ? "/"
-    : !thread.slug
-      ? paths.workspace.chat(workspaceSlug)
-      : paths.workspace.thread(workspaceSlug, thread.slug);
+  // Unlike upstream we do not render the virtual "*New Thread" row (the top
+  // New Thread button replaces it), so every item here is a real link.
+  const linkTo = !thread.slug
+    ? paths.workspace.chat(workspaceSlug)
+    : paths.workspace.thread(workspaceSlug, thread.slug);
 
   const { ref } = useScrollActiveItemIntoView({
     isActive,
@@ -85,7 +85,7 @@ export default function ThreadItem({
             </p>
           </Link>
         )}
-        {!!thread.slug && !thread.deleted && !thread.virtual && (
+        {!!thread.slug && !thread.deleted && (
           <div ref={optionsContainer} className="flex items-center">
             {" "}
             {/* Added flex and items-center */}

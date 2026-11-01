@@ -14,6 +14,11 @@ import ThreadItem from "../ThreadItem";
  * The container keeps state and handlers; this component owns order, the
  * optional older-thread fold (R1), the missing connector lines (R2), the
  * New Thread button at the top (R3) and newest-first sorting (R4).
+ *
+ * Upstream's virtual "*New Thread" row is intentionally not rendered: it
+ * duplicated the New Thread button and appeared as a phantom row on every
+ * bare workspace route (after deleting the active thread, on a new
+ * workspace). The button is now the only way to start a chat.
  */
 export default function ThreadList({
   containerRef,
@@ -43,8 +48,6 @@ export default function ThreadList({
     });
   }, [threads]);
 
-  const showVirtualThread =
-    isVirtualThread || (!threadSlug && !defaultThreadHasChats);
   const activeThreadIndex =
     limit > 0
       ? sortedThreads.findIndex((thread) => thread.slug === threadSlug)
@@ -60,8 +63,6 @@ export default function ThreadList({
 
   const defaultThreadIsActive =
     !isVirtualThread && !threadSlug && defaultThreadHasChats;
-  const virtualThreadIsActive =
-    isVirtualThread || (!threadSlug && !defaultThreadHasChats);
 
   return (
     <div ref={containerRef} className="flex flex-col">
@@ -89,13 +90,6 @@ export default function ThreadList({
             thread={thread}
           />
         ))}
-        {showVirtualThread && (
-          <ThreadItem
-            isActive={virtualThreadIsActive}
-            workspace={workspace}
-            thread={{ slug: null, name: "*New Thread", virtual: true }}
-          />
-        )}
         {limit > 0 && (olderCount > 0 || (showAll && !activeThreadIsOlder)) && (
           <button
             type="button"
