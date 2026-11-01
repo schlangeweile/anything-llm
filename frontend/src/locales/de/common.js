@@ -916,6 +916,11 @@ const TRANSLATIONS = {
         description:
           "Fordert während der Antwortgenerierung einen Screen Wake Lock an. Standardmäßig aus; funktioniert nur über HTTPS (Secure Context).",
       },
+      "chat-metrics": {
+        title: "Chat-Metriken anzeigen",
+        description:
+          "Zeigt Modell, Dauer, Tokens/s sowie Prompt-/Completion-Token unter jeder Antwort an, ohne dass man darüberfahren muss. Standardmäßig aus; die Zeile lässt sich auch per Klick im Chat dauerhaft einblenden.",
+      },
       theme: {
         title: "Farbschema",
         description: "Wählen Sie Ihr bevorzugtes Farbschema für die Anwendung.",

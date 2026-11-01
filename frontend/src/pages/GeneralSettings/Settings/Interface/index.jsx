@@ -5,6 +5,7 @@ import LanguagePreference from "../components/LanguagePreference";
 import ThemePreference from "../components/ThemePreference";
 import ThreadListLimit from "../components/ThreadListLimit";
 import KeepScreenAwake from "../components/KeepScreenAwake";
+import ChatMetrics from "../components/ChatMetrics";
 
 export default function InterfaceSettings() {
   const { t } = useTranslation();
@@ -31,6 +32,7 @@ export default function InterfaceSettings() {
           <LanguagePreference />
           <ThreadListLimit />
           <KeepScreenAwake />
+          <ChatMetrics />
         </div>
       </div>
     </div>

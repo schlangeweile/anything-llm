@@ -893,6 +893,11 @@ const TRANSLATIONS = {
         description:
           "Request a screen wake lock while a response is being generated. Off by default; only works over HTTPS (secure context).",
       },
+      "chat-metrics": {
+        title: "Show chat metrics",
+        description:
+          "Show the model, duration, tokens/s and prompt/completion token usage below each answer without hovering. Off by default; the line can also be pinned by clicking it in a chat.",
+      },
       theme: {
         title: "Theme",
         description: "Select your preferred color theme for the application.",

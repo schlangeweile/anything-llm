@@ -9,7 +9,8 @@ import { safeJsonParse } from "@/utils/request";
  * 'renderHTML' |
  * 'disableAutoScroll' |
  * 'threadListLimit' |
- * 'keepScreenAwake'
+ * 'keepScreenAwake' |
+ * 'showChatMetrics'
  * } AvailableSettings - The supported settings for the appearance model.
  */
 
@@ -28,6 +29,9 @@ const Appearance = {
     // only effective in a secure context (HTTPS) and silently a no-op where
     // the Wake Lock API does not exist or the request is rejected.
     keepScreenAwake: false,
+    // Show the per-message metrics line (model, tok/s, tokens, date) without
+    // hovering. Off by default; toggled in UI Preferences.
+    showChatMetrics: false,
   },
 
   /**

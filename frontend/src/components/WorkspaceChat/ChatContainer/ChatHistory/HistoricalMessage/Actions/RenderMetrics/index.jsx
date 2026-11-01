@@ -1,10 +1,13 @@
 import { formatDateTimeAsMoment } from "@/utils/directories";
 import { formatDuration, numberWithCommas } from "@/utils/numbers";
+import {
+  getShowChatMetrics,
+  setShowChatMetrics,
+  SHOW_METRICS_EVENT,
+} from "@/utils/chatMetrics";
 import React, { useEffect, useState, useContext } from "react";
 import { isMobile } from "react-device-detect";
 const MetricsContext = React.createContext();
-const SHOW_METRICS_KEY = "anythingllm_show_chat_metrics";
-const SHOW_METRICS_EVENT = "anythingllm_show_metrics_change";
 
 /**
  * Format the output TPS to a string
@@ -22,46 +25,61 @@ function formatTps(outputTps) {
 }
 
 /**
- * Get the show metrics setting from localStorage `anythingllm_show_chat_metrics` key
- * @returns {boolean}
+ * Format the prompt/completion token usage for the metrics line.
+ * @param {{prompt_tokens?: number, completion_tokens?: number, total_tokens?: number}} metrics
+ * @returns {string}
  */
-function getAutoShowMetrics() {
-  return window?.localStorage?.getItem(SHOW_METRICS_KEY) === "true";
+function formatTokenUsage(metrics = {}) {
+  const prompt = Number(metrics.prompt_tokens);
+  const completion = Number(metrics.completion_tokens);
+  const knownPrompt = Number.isFinite(prompt) && prompt > 0 ? prompt : 0;
+  const knownCompletion =
+    Number.isFinite(completion) && completion > 0 ? completion : 0;
+  const total = Number(metrics.total_tokens) || knownPrompt + knownCompletion;
+  if (!Number.isFinite(total) || total <= 0) return "";
+
+  const parts = [];
+  if (knownPrompt > 0)
+    parts.push(`${numberWithCommas(Math.round(knownPrompt))} prompt`);
+  if (knownCompletion > 0)
+    parts.push(`${numberWithCommas(Math.round(knownCompletion))} completion`);
+
+  const totalString = numberWithCommas(Math.round(total));
+  return parts.length > 0
+    ? `${totalString} tok (${parts.join(" · ")})`
+    : `${totalString} tok`;
 }
 
 /**
  * Build the metrics string for a given metrics object
  * - Model name
- * - Duration and output TPS
+ * - Duration and output TPS (when reported)
+ * - Token usage
  * - Timestamp
- * @param {metrics: {duration:number, outputTps: number, model?: string, timestamp?: number}} metrics
+ * @param {metrics: {duration:number, outputTps: number, prompt_tokens: number, completion_tokens: number, total_tokens: number, model?: string, timestamp?: number}} metrics
  * @returns {string}
  */
 function buildMetricsString(metrics = {}) {
-  return [
-    metrics?.model ? metrics.model : "",
-    `${formatDuration(metrics.duration)} (${formatTps(metrics.outputTps)} tok/s)`,
-    metrics?.timestamp
-      ? formatDateTimeAsMoment(metrics.timestamp, "MMM D, h:mm A")
-      : "",
-  ]
-    .filter(Boolean)
-    .join(" · ");
-}
+  const parts = [];
+  if (metrics?.model) parts.push(metrics.model);
 
-/**
- * Toggle the show metrics setting in localStorage `anythingllm_show_chat_metrics` key
- * @returns {void}
- */
-function toggleAutoShowMetrics() {
-  const currentValue = getAutoShowMetrics() || false;
-  window?.localStorage?.setItem(SHOW_METRICS_KEY, !currentValue);
-  window.dispatchEvent(
-    new CustomEvent(SHOW_METRICS_EVENT, {
-      detail: { showMetricsAutomatically: !currentValue },
-    })
-  );
-  return !currentValue;
+  if (metrics?.duration) {
+    const duration = formatDuration(metrics.duration);
+    const tps = Number(metrics.outputTps);
+    parts.push(
+      Number.isFinite(tps) && tps > 0
+        ? `${duration} (${formatTps(tps)} tok/s)`
+        : duration
+    );
+  }
+
+  const tokens = formatTokenUsage(metrics);
+  if (tokens) parts.push(tokens);
+
+  if (metrics?.timestamp)
+    parts.push(formatDateTimeAsMoment(metrics.timestamp, "MMM D, h:mm A"));
+
+  return parts.join(" · ");
 }
 
 /**
@@ -72,7 +90,7 @@ function toggleAutoShowMetrics() {
  */
 export function MetricsProvider({ children }) {
   const [showMetricsAutomatically, setShowMetricsAutomatically] =
-    useState(getAutoShowMetrics());
+    useState(getShowChatMetrics);
 
   useEffect(() => {
     function handleShowingMetricsEvent(e) {
@@ -101,14 +119,21 @@ export function MetricsProvider({ children }) {
  */
 export default function RenderMetrics({ metrics = {} }) {
   // Inherit the showMetricsAutomatically state from the MetricsProvider so the state is shared across all chats
-  const { showMetricsAutomatically, setShowMetricsAutomatically } =
-    useContext(MetricsContext);
-  if (!metrics?.duration || !metrics?.outputTps || isMobile) return null;
+  const { showMetricsAutomatically } = useContext(MetricsContext);
+  const hasMetrics =
+    !!metrics?.duration ||
+    !!metrics?.outputTps ||
+    !!metrics?.prompt_tokens ||
+    !!metrics?.completion_tokens ||
+    !!metrics?.total_tokens;
+  // Mobile has no hover to reveal the line, so only render it there when the
+  // user explicitly enabled the preference.
+  if (!hasMetrics || (isMobile && !showMetricsAutomatically)) return null;
 
   return (
     <button
       type="button"
-      onClick={() => setShowMetricsAutomatically(toggleAutoShowMetrics())}
+      onClick={() => setShowChatMetrics(!showMetricsAutomatically)}
       data-tooltip-id="metrics-visibility"
       data-tooltip-content={
         showMetricsAutomatically
