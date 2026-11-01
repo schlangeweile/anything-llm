@@ -1,7 +1,9 @@
 import React, { memo, useLayoutEffect, useRef, useState } from "react";
 import { Info, Warning } from "@phosphor-icons/react";
 import Actions from "./Actions";
-import renderMarkdown from "@/utils/chat/markdown";
+import renderMarkdown, {
+  renderUserMarkdown,
+} from "@/utils/chat/markdown";
 import Citations from "../Citation";
 import { v4 } from "uuid";
 import DOMPurify from "@/utils/chat/purify";
@@ -327,7 +329,7 @@ const RenderChatContent = memo(
         <span
           className="flex flex-col gap-y-1 text-white light:text-slate-900"
           dangerouslySetInnerHTML={{
-            __html: DOMPurify.sanitize(renderMarkdown(message)),
+            __html: DOMPurify.sanitize(renderUserMarkdown(message)),
           }}
         />
       );

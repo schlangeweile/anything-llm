@@ -11,7 +11,7 @@ import { v4 } from "uuid";
 import hljsDefineSvelte from "./hljs-libraries/svelte";
 hljs.registerLanguage("svelte", hljsDefineSvelte);
 
-const markdown = markdownIt({
+const markdownOptions = {
   html: Appearance.get("renderHTML") ?? false,
   typographer: true,
   highlight: function (code, lang) {
@@ -55,31 +55,52 @@ const markdown = markdownIt({
       "</pre></div>"
     );
   },
+};
+
+const markdown = markdownIt(markdownOptions);
+
+// R7: a single newline inside a paragraph is a space in CommonMark, which
+// destroys pasted logs and console output. User messages get a second
+// instance with `breaks: true`; assistant messages keep the upstream
+// behaviour so their formatting does not change.
+const markdownWithBreaks = markdownIt({
+  ...markdownOptions,
+  breaks: true,
 });
 
-// Add custom renderer for strong tags to handle theme colors
-markdown.renderer.rules.strong_open = () => '<strong class="text-white">';
-markdown.renderer.rules.strong_close = () => "</strong>";
-markdown.renderer.rules.link_open = (tokens, idx) => {
-  const token = tokens[idx];
-  const href = token.attrs.find((attr) => attr[0] === "href");
-  return `<a href="${HTMLEncode(href[1])}" target="_blank" rel="noopener noreferrer">`;
-};
+function applyCustomRenderers(instance) {
+  // Add custom renderer for strong tags to handle theme colors
+  instance.renderer.rules.strong_open = () => '<strong class="text-white">';
+  instance.renderer.rules.strong_close = () => "</strong>";
+  instance.renderer.rules.link_open = (tokens, idx) => {
+    const token = tokens[idx];
+    const href = token.attrs.find((attr) => attr[0] === "href");
+    return `<a href="${HTMLEncode(href[1])}" target="_blank" rel="noopener noreferrer">`;
+  };
 
-// Custom renderer for responsive images rendered in markdown
-markdown.renderer.rules.image = function (tokens, idx) {
-  const token = tokens[idx];
-  const srcIndex = token.attrIndex("src");
-  const src = token.attrs[srcIndex][1];
-  const alt = token.content || "";
+  // Custom renderer for responsive images rendered in markdown
+  instance.renderer.rules.image = function (tokens, idx) {
+    const token = tokens[idx];
+    const srcIndex = token.attrIndex("src");
+    const src = token.attrs[srcIndex][1];
+    const alt = token.content || "";
 
-  return `<div class="w-full max-w-[800px]"><img src="${HTMLEncode(src)}" alt="${HTMLEncode(alt)}" class="w-full h-auto" /></div>`;
-};
+    return `<div class="w-full max-w-[800px]"><img src="${HTMLEncode(src)}" alt="${HTMLEncode(alt)}" class="w-full h-auto" /></div>`;
+  };
 
-markdown.use(markdownItKatexPlugin);
+  instance.use(markdownItKatexPlugin);
+}
+
+applyCustomRenderers(markdown);
+applyCustomRenderers(markdownWithBreaks);
 
 export default function renderMarkdown(text = "") {
   return markdown.render(text);
+}
+
+/** Render a user message with soft line breaks preserved. */
+export function renderUserMarkdown(text = "") {
+  return markdownWithBreaks.render(text);
 }
 
 /**
