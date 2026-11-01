@@ -15,7 +15,7 @@ import System from "@/models/system";
 import ModelRouterAPI from "@/models/modelRouter";
 import { SIDEBAR_TOGGLE_EVENT } from "@/components/Sidebar/SidebarToggle";
 
-async function resolveModelName(workspace, systemSettings, t) {
+export async function resolveModelName(workspace, systemSettings, t) {
   const effectiveProvider =
     workspace.chatProvider ?? systemSettings?.LLMProvider;
 
@@ -40,7 +40,10 @@ async function fetchModelName(slug, setModelName, t) {
   setModelName(await resolveModelName(workspace, systemSettings, t));
 }
 
-export default function WorkspaceModelPicker({ workspaceSlug = null }) {
+export default function WorkspaceModelPicker({
+  workspaceSlug = null,
+  workspaceName = null,
+}) {
   const { t } = useTranslation();
   const { slug: urlSlug } = useParams();
   const slug = urlSlug ?? workspaceSlug;
@@ -64,10 +67,12 @@ export default function WorkspaceModelPicker({ workspaceSlug = null }) {
     return () => window.removeEventListener(SIDEBAR_TOGGLE_EVENT, handleToggle);
   }, []);
 
-  // Fetch current model name for display
+  // Fetch current model name for display. Mobile renders its own compact
+  // context line in the fixed header, so skip the duplicate request there.
   useEffect(() => {
+    if (isMobile) return;
     fetchModelName(slug, setModelName, t);
-  }, [slug]);
+  }, [slug, isMobile]);
 
   // Close selector and refresh model name when model is saved
   useEffect(() => {
@@ -126,6 +131,7 @@ export default function WorkspaceModelPicker({ workspaceSlug = null }) {
             }`}
           >
             {modelName || t("chat_window.select_model")}
+            {workspaceName ? ` · ${workspaceName}` : ""}
           </span>
         </button>
 

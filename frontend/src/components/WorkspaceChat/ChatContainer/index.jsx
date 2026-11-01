@@ -36,12 +36,31 @@ import paths from "@/utils/paths";
 import QuickActions from "@/components/lib/QuickActions";
 import SuggestedMessages from "@/components/lib/SuggestedMessages";
 import ChatSettingsMenu from "./ChatSettingsMenu";
-import WorkspaceModelPicker from "./WorkspaceModelPicker";
+import WorkspaceModelPicker, { resolveModelName } from "./WorkspaceModelPicker";
 import { ChatSidebarProvider } from "./ChatSidebar";
 import SourcesSidebar from "./SourcesSidebar";
 import MemoriesSidebar from "./MemoriesSidebar";
 import ActiveGenerationGuard from "./ActiveGenerationGuard";
 import { THREAD_ACTIVITY_EVENT } from "@/components/Sidebar/ActiveWorkspaces/ThreadContainer";
+import System from "@/models/system";
+import { useTranslation } from "react-i18next";
+
+/**
+ * Mobile equivalent of the desktop model label: same place relative to the
+ * chat pane (top-left) but below the fixed mobile app header.
+ */
+function MobileChatContext({ label = "" }) {
+  return (
+    <div className="md:hidden pointer-events-none absolute top-16 left-0 right-0 z-[9] px-4 py-1.5 bg-zinc-900/85 light:bg-white/85 backdrop-blur-sm">
+      <p
+        title={label}
+        className="truncate text-xs text-zinc-500 light:text-slate-500"
+      >
+        {label}
+      </p>
+    </div>
+  );
+}
 
 export default function ChatContainer({
   workspace,
@@ -50,6 +69,8 @@ export default function ChatContainer({
 }) {
   const navigate = useNavigate();
   const greeting = useGreeting();
+  const { t } = useTranslation();
+  const [mobileModelName, setMobileModelName] = useState("");
   const [loadingResponse, setLoadingResponse] = useState(false);
   useWakeLock(loadingResponse);
   const [chatHistory, setChatHistory] = useState(knownHistory);
@@ -60,6 +81,26 @@ export default function ChatContainer({
   const pendingMessageChecked = useRef(false);
   const pendingResetRef = useRef(false);
   const activeThreadSlug = threadSlug;
+
+  // Mobile has no room for the desktop model picker; show the effective model
+  // (including the model-router name) next to the workspace in the fixed
+  // mobile header instead.
+  useEffect(() => {
+    if (!isMobile || !workspace?.slug) return;
+    let active = true;
+    (async () => {
+      const settings = await System.keys();
+      const name = await resolveModelName(workspace, settings, t);
+      if (active) setMobileModelName(name);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [workspace?.slug, isMobile, t]);
+
+  const mobileContextLabel = isMobile
+    ? [mobileModelName, workspace?.name].filter(Boolean).join(" · ")
+    : null;
 
   /**
    * R5: tell the sidebar that the active thread got a message. threadSlug does
@@ -516,7 +557,13 @@ export default function ChatContainer({
           />
           <div className="flex-1 min-w-0 relative md:rounded-[16px] bg-zinc-900 light:bg-white w-full h-full overflow-hidden border-none light:border-solid light:border light:border-theme-modal-border">
             {isMobile && <SidebarMobileHeader />}
-            <WorkspaceModelPicker workspaceSlug={workspace.slug} />
+            {isMobile && mobileContextLabel && (
+              <MobileChatContext label={mobileContextLabel} />
+            )}
+            <WorkspaceModelPicker
+              workspaceSlug={workspace.slug}
+              workspaceName={workspace.name}
+            />
             <DnDFileUploaderWrapper>
               <div className="flex flex-col h-full w-full items-center justify-center">
                 <div className="flex flex-col items-center w-full max-w-[750px]">
@@ -574,7 +621,13 @@ export default function ChatContainer({
         />
         <div className="flex-1 min-w-0 relative md:rounded-[16px] bg-zinc-900 light:bg-white text-white light:text-slate-900 h-full overflow-hidden border-none light:border-solid light:border light:border-theme-modal-border">
           {isMobile && <SidebarMobileHeader />}
-          <WorkspaceModelPicker workspaceSlug={workspace.slug} />
+          {isMobile && mobileContextLabel && (
+            <MobileChatContext label={mobileContextLabel} />
+          )}
+          <WorkspaceModelPicker
+            workspaceSlug={workspace.slug}
+            workspaceName={workspace.name}
+          />
           <DnDFileUploaderWrapper>
             <div className="flex flex-col h-full w-full pb-20 md:pb-0">
               <div className="contents">
