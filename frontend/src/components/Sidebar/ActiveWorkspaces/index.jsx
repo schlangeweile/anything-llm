@@ -59,9 +59,21 @@ export default function ActiveWorkspaces() {
     persistCollapsed(next);
   }
 
-  // Clicking the workspace name navigates AND opens it; only the chevron
-  // toggles without leaving the current thread.
-  function expandWorkspace(workspaceSlug) {
+  // Clicking the name of another workspace navigates AND opens it. Clicking
+  // the name of the workspace that is already open (chat/thread route)
+  // toggles its thread list instead, so collapsing no longer requires the
+  // chevron. In workspace settings the name keeps navigating back to the
+  // chat, because that is the established way out of the settings page.
+  function handleWorkspaceNameClick(workspaceSlug, event) {
+    if (workspaceSlug === slug && !isInWorkspaceSettings) {
+      event.preventDefault();
+      toggleWorkspace(workspaceSlug);
+      return;
+    }
+    openWorkspace(workspaceSlug);
+  }
+
+  function openWorkspace(workspaceSlug) {
     if (!collapsedWorkspaces.has(workspaceSlug)) return;
     const next = new Set(collapsedWorkspaces);
     next.delete(workspaceSlug);
@@ -168,7 +180,7 @@ export default function ActiveWorkspaces() {
                       <div className="flex gap-x-2 items-center justify-between">
                         <Link
                           to={paths.workspace.chat(workspace.slug)}
-                          onClick={() => expandWorkspace(workspace.slug)}
+                          onClick={(e) => handleWorkspaceNameClick(workspace.slug, e)}
                           aria-current={isActive ? "page" : ""}
                           className={`
                             transition-all duration-[200ms]
