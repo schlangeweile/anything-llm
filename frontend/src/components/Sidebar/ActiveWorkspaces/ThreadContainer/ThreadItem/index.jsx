@@ -12,16 +12,12 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-const THREAD_CALLOUT_DETAIL_WIDTH = 26;
 export default function ThreadItem({
-  idx,
-  activeIdx,
   isActive,
   workspace,
   thread,
   onRemove,
   toggleMarkForDeletion,
-  hasNext,
   ctrlPressed = false,
 }) {
   const { slug: urlSlug, threadSlug = null } = useParams();
@@ -44,32 +40,6 @@ export default function ThreadItem({
       className="w-full relative flex h-[38px] items-center border-none rounded-lg"
       role="listitem"
     >
-      {/* Curved line Element and leader if required */}
-      <div
-        style={{ width: THREAD_CALLOUT_DETAIL_WIDTH / 2 }}
-        className={`${
-          isActive
-            ? "border-l-2 border-b-2 border-white light:border-blue-800 z-[2]"
-            : "border-l border-b border-zinc-500 light:border-slate-400 z-[1]"
-        } h-[50%] absolute top-0 left-3 rounded-bl-lg`}
-      ></div>
-      {/* Downstroke border for next item */}
-      {hasNext && (
-        <div
-          style={{ width: THREAD_CALLOUT_DETAIL_WIDTH / 2 }}
-          className={`${
-            idx <= activeIdx && !isActive
-              ? "border-l-2 border-white light:border-blue-800 z-[2]"
-              : "border-l border-zinc-500 light:border-slate-400 z-[1]"
-          } h-[100%] absolute top-0 left-3`}
-        ></div>
-      )}
-
-      {/* Curved line inline placeholder for spacing - not visible */}
-      <div
-        style={{ width: THREAD_CALLOUT_DETAIL_WIDTH + 8 }}
-        className="h-full"
-      />
       <div
         className={`flex w-full items-center justify-between pr-2 group/thread relative ${isActive ? "bg-[var(--theme-sidebar-thread-selected)] light:bg-blue-200" : "hover:bg-theme-sidebar-subitem-hover light:hover:bg-slate-300"} rounded-[4px]`}
       >
@@ -101,11 +71,11 @@ export default function ThreadItem({
             to={linkTo}
             data-tooltip-id="workspace-thread-name"
             data-tooltip-content={thread.name}
-            className="w-full pl-2 py-1 overflow-hidden"
+            className="flex-1 min-w-0 pl-2 py-1 overflow-hidden"
             aria-current={isActive ? "page" : ""}
           >
             <p
-              className={`text-left text-sm truncate max-w-[150px] ${
+              className={`text-left text-sm truncate ${
                 isActive
                   ? "font-semibold text-theme-text-primary light:text-blue-900"
                   : "text-theme-text-primary font-medium light:text-slate-800"

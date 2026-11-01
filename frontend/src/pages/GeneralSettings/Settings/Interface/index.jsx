@@ -3,6 +3,7 @@ import { isMobile } from "react-device-detect";
 import { useTranslation } from "react-i18next";
 import LanguagePreference from "../components/LanguagePreference";
 import ThemePreference from "../components/ThemePreference";
+import ThreadListLimit from "../components/ThreadListLimit";
 
 export default function InterfaceSettings() {
   const { t } = useTranslation();
@@ -27,6 +28,7 @@ export default function InterfaceSettings() {
           </div>
           <ThemePreference />
           <LanguagePreference />
+          <ThreadListLimit />
         </div>
       </div>
     </div>

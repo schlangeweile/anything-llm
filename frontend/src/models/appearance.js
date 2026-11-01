@@ -7,7 +7,8 @@ import { safeJsonParse } from "@/utils/request";
  * 'autoPlayAssistantTtsResponse' |
  * 'enableSpellCheck' |
  * 'renderHTML' |
- * 'disableAutoScroll'
+ * 'disableAutoScroll' |
+ * 'threadListLimit'
  * } AvailableSettings - The supported settings for the appearance model.
  */
 
@@ -19,6 +20,9 @@ const Appearance = {
     enableSpellCheck: true,
     renderHTML: false,
     disableAutoScroll: false,
+    // 0 = show every thread. A positive value folds older threads behind a
+    // toggle; the newest threads and the active thread stay visible.
+    threadListLimit: 0,
   },
 
   /**

@@ -1,13 +1,13 @@
 import Workspace from "@/models/workspace";
 import paths from "@/utils/paths";
-import showToast from "@/utils/toast";
-import { Plus, CircleNotch, Trash } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import ThreadItem from "./ThreadItem";
 import { useNavigate, useParams } from "react-router-dom";
 import useHoverMetaKey from "./hooks";
+import ThreadList from "./ThreadList";
+
 export const THREAD_RENAME_EVENT = "renameThread";
 export const THREAD_FORK_EVENT = "forkToThread";
+export const THREAD_ACTIVITY_EVENT = "threadActivity";
 
 export default function ThreadContainer({
   workspace,
@@ -58,6 +58,28 @@ export default function ThreadContainer({
     };
   }, [workspace?.slug]);
 
+  // R5: a message in the current thread does not change threadSlug, so the
+  // fetch effect below does not run. The composer emits this event right after
+  // sending; update the row locally and let ThreadList sort it to the top.
+  // The server patch bumps lastUpdatedAt, so the next full fetch agrees.
+  useEffect(() => {
+    const activityHandler = (event) => {
+      const { threadSlug: activeSlug, timestamp } = event.detail ?? {};
+      if (!activeSlug) return;
+      const lastUpdatedAt = new Date(timestamp ?? Date.now()).toISOString();
+      setThreads((prevThreads) =>
+        prevThreads.map((thread) =>
+          thread.slug === activeSlug ? { ...thread, lastUpdatedAt } : thread
+        )
+      );
+    };
+
+    window.addEventListener(THREAD_ACTIVITY_EVENT, activityHandler);
+    return () => {
+      window.removeEventListener(THREAD_ACTIVITY_EVENT, activityHandler);
+    };
+  }, []);
+
   useEffect(() => {
     async function fetchThreads() {
       if (!workspace.slug) return;
@@ -107,18 +129,6 @@ export default function ThreadContainer({
     }, 500);
   }
 
-  function getActiveThreadIdx() {
-    if (isVirtualThread)
-      return threads.length + (defaultThreadHasChats ? 1 : 0);
-    // On a bare workspace route with no default chats, show virtual thread as active
-    if (!threadSlug && !defaultThreadHasChats)
-      return threads.length + (defaultThreadHasChats ? 1 : 0);
-    const idx = threads.findIndex((t) => t?.slug === threadSlug);
-    if (idx >= 0) return idx + (defaultThreadHasChats ? 1 : 0);
-    if (!threadSlug && defaultThreadHasChats) return 0;
-    return -1;
-  }
-
   if (loading) {
     return (
       <div className="flex flex-col bg-pulse w-full h-10 items-center justify-center">
@@ -127,146 +137,19 @@ export default function ThreadContainer({
     );
   }
 
-  const activeThreadIdx = getActiveThreadIdx();
-
-  // Show a virtual thread when on a bare workspace route (no threadSlug) and
-  // the default thread has no chats — mimics the Home page virtual thread behavior.
-  const showVirtualThread =
-    isVirtualThread || (!threadSlug && !defaultThreadHasChats);
-
   return (
-    <div
-      ref={containerRef}
-      className="flex flex-col"
-      role="list"
-      aria-label="Threads"
-    >
-      {defaultThreadHasChats && (
-        <ThreadItem
-          idx={0}
-          activeIdx={activeThreadIdx}
-          isActive={activeThreadIdx === 0}
-          workspace={workspace}
-          thread={{ slug: null, name: "default" }}
-          hasNext={threads.length > 0 || showVirtualThread}
-        />
-      )}
-      {threads.map((thread, i) => (
-        <ThreadItem
-          key={thread.slug}
-          idx={i + (defaultThreadHasChats ? 1 : 0)}
-          ctrlPressed={ctrlPressed}
-          toggleMarkForDeletion={toggleForDeletion}
-          activeIdx={activeThreadIdx}
-          isActive={activeThreadIdx === i + (defaultThreadHasChats ? 1 : 0)}
-          workspace={workspace}
-          onRemove={removeThread}
-          thread={thread}
-          hasNext={i !== threads.length - 1 || showVirtualThread}
-        />
-      ))}
-      {showVirtualThread && (
-        <ThreadItem
-          idx={activeThreadIdx}
-          activeIdx={activeThreadIdx}
-          isActive={true}
-          workspace={workspace}
-          thread={{ slug: null, name: "*New Thread", virtual: true }}
-          hasNext={false}
-        />
-      )}
-      <DeleteAllThreadButton
-        ctrlPressed={ctrlPressed}
-        threads={threads}
-        onDelete={handleDeleteAll}
-      />
-      <NewThreadButton
-        workspace={workspace}
-        onNewThread={(thread) => setThreads((prev) => [...prev, thread])}
-      />
-    </div>
-  );
-}
-
-function NewThreadButton({ workspace, onNewThread }) {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const onClick = async () => {
-    setLoading(true);
-    const { thread, error } = await Workspace.threads.new(workspace.slug);
-    if (!!error) {
-      showToast(`Could not create thread - ${error}`, "error", { clear: true });
-      setLoading(false);
-      return;
-    }
-    // Show the new thread in the sidebar immediately - if the navigation below
-    // gets blocked (ActiveGenerationGuard) and cancelled, the thread still
-    // exists and remains reachable. Router navigation also ensures the guard
-    // can intercept and the button never wedges in its loading state.
-    onNewThread?.(thread);
-    navigate(paths.workspace.thread(workspace.slug, thread.slug), {
-      replace: true,
-    });
-    setLoading(false);
-  };
-
-  return (
-    <button
-      onClick={onClick}
-      className="w-full relative flex h-[40px] items-center border-none hover:bg-[var(--theme-sidebar-thread-selected)] light:hover:bg-slate-300 hover:light:bg-theme-sidebar-subitem-hover rounded-lg"
-    >
-      <div className="flex w-full gap-x-2 items-center pl-4">
-        <div className="bg-zinc-800 light:bg-slate-50 p-2 rounded-lg h-[24px] w-[24px] flex items-center justify-center">
-          {loading ? (
-            <CircleNotch
-              weight="bold"
-              size={14}
-              className="shrink-0 animate-spin text-white light:text-theme-text-primary"
-            />
-          ) : (
-            <Plus
-              weight="bold"
-              size={14}
-              className="shrink-0 text-white light:text-theme-text-primary"
-            />
-          )}
-        </div>
-
-        {loading ? (
-          <p className="text-left text-white light:text-theme-text-primary text-sm">
-            Starting Thread...
-          </p>
-        ) : (
-          <p className="text-left text-white light:text-theme-text-primary text-sm font-semibold">
-            New Thread
-          </p>
-        )}
-      </div>
-    </button>
-  );
-}
-
-function DeleteAllThreadButton({ ctrlPressed, threads, onDelete }) {
-  if (!ctrlPressed || threads.filter((t) => t.deleted).length === 0)
-    return null;
-  return (
-    <button
-      type="button"
-      onClick={onDelete}
-      className="w-full relative flex h-[40px] items-center border-none hover:bg-red-400/20 rounded-lg group"
-    >
-      <div className="flex w-full gap-x-2 items-center pl-4">
-        <div className="bg-transparent p-2 rounded-lg h-[24px] w-[24px] flex items-center justify-center">
-          <Trash
-            weight="bold"
-            size={14}
-            className="shrink-0 text-white light:text-red-500/50 group-hover:text-red-400"
-          />
-        </div>
-        <p className="text-white light:text-theme-text-secondary text-left text-sm group-hover:text-red-400">
-          Delete Selected
-        </p>
-      </div>
-    </button>
+    <ThreadList
+      containerRef={containerRef}
+      workspace={workspace}
+      threads={threads}
+      threadSlug={threadSlug}
+      isVirtualThread={isVirtualThread}
+      defaultThreadHasChats={defaultThreadHasChats}
+      ctrlPressed={ctrlPressed}
+      onNewThread={(thread) => setThreads((prev) => [...prev, thread])}
+      onDeleteAll={handleDeleteAll}
+      onRemove={removeThread}
+      toggleMarkForDeletion={toggleForDeletion}
+    />
   );
 }

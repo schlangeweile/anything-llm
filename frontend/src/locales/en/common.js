@@ -183,6 +183,14 @@ const TRANSLATIONS = {
     title: "New Workspace",
     placeholder: "My Workspace",
   },
+  "thread-list": {
+    new: "New Thread",
+    starting: "Starting Thread...",
+    "show-older_one": "Show {{count}} older thread",
+    "show-older_other": "Show {{count}} older threads",
+    "show-less": "Show less",
+    "delete-selected": "Delete Selected",
+  },
   "workspaces—settings": {
     general: "General Settings",
     chat: "Chat Settings",
@@ -871,6 +879,12 @@ const TRANSLATIONS = {
       },
     },
     items: {
+      "thread-list": {
+        title: "Thread list",
+        description:
+          "Show only the newest threads in the sidebar and fold older ones behind a toggle. Off by default; the active thread always stays visible.",
+        limit: "Threads shown",
+      },
       theme: {
         title: "Theme",
         description: "Select your preferred color theme for the application.",

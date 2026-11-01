@@ -175,6 +175,14 @@ const TRANSLATIONS = {
     title: "Neuer Workspace",
     placeholder: "Mein Workspace",
   },
+  "thread-list": {
+    new: "Neuer Thread",
+    starting: "Thread wird gestartet...",
+    "show-older_one": "{{count}} älteren Thread anzeigen",
+    "show-older_other": "{{count}} ältere Threads anzeigen",
+    "show-less": "Weniger anzeigen",
+    "delete-selected": "Auswahl löschen",
+  },
   "workspaces—settings": {
     general: "Allgemeine Einstellungen",
     chat: "Chat-Einstellungen",
@@ -894,6 +902,12 @@ const TRANSLATIONS = {
       },
     },
     items: {
+      "thread-list": {
+        title: "Thread-Liste",
+        description:
+          "Nur die neuesten Threads in der Seitenleiste anzeigen und ältere hinter einem Schalter einklappen. Standardmäßig aus; der aktive Thread bleibt immer sichtbar.",
+        limit: "Angezeigte Threads",
+      },
       theme: {
         title: "Farbschema",
         description: "Wählen Sie Ihr bevorzugtes Farbschema für die Anwendung.",
