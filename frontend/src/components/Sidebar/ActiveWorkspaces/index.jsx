@@ -7,15 +7,22 @@ import ManageWorkspace, {
 } from "../../Modals/ManageWorkspace";
 import paths from "@/utils/paths";
 import { Link, useParams, useNavigate, useMatch } from "react-router-dom";
-import { GearSix, UploadSimple, DotsSixVertical } from "@phosphor-icons/react";
+import {
+  CaretRight,
+  GearSix,
+  UploadSimple,
+  DotsSixVertical,
+} from "@phosphor-icons/react";
 import useUser from "@/hooks/useUser";
 import ThreadContainer from "./ThreadContainer";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import showToast from "@/utils/toast";
 import { LAST_VISITED_WORKSPACE } from "@/utils/constants";
 import { safeJsonParse } from "@/utils/request";
+import { useTranslation } from "react-i18next";
 
 export const REFETCH_WORKSPACES_EVENT = "refetchWorkspaces";
+const COLLAPSED_WORKSPACES_KEY = "anythingllm-collapsed-workspaces";
 
 export default function ActiveWorkspaces() {
   const navigate = useNavigate();
@@ -27,6 +34,39 @@ export default function ActiveWorkspaces() {
   const { user } = useUser();
   const isInWorkspaceSettings = !!useMatch("/workspace/:slug/settings/:tab");
   const isHomePage = !!useMatch("/");
+  const { t } = useTranslation();
+  const [collapsedWorkspaces, setCollapsedWorkspaces] = useState(() => {
+    const stored = safeJsonParse(localStorage.getItem(COLLAPSED_WORKSPACES_KEY));
+    return new Set(Array.isArray(stored) ? stored : []);
+  });
+
+  function persistCollapsed(next) {
+    setCollapsedWorkspaces(next);
+    try {
+      localStorage.setItem(
+        COLLAPSED_WORKSPACES_KEY,
+        JSON.stringify(Array.from(next))
+      );
+    } catch (error) {
+      console.error("Could not store collapsed workspaces:", error);
+    }
+  }
+
+  function toggleWorkspace(workspaceSlug) {
+    const next = new Set(collapsedWorkspaces);
+    if (next.has(workspaceSlug)) next.delete(workspaceSlug);
+    else next.add(workspaceSlug);
+    persistCollapsed(next);
+  }
+
+  // Clicking the workspace name navigates AND opens it; only the chevron
+  // toggles without leaving the current thread.
+  function expandWorkspace(workspaceSlug) {
+    if (!collapsedWorkspaces.has(workspaceSlug)) return;
+    const next = new Set(collapsedWorkspaces);
+    next.delete(workspaceSlug);
+    persistCollapsed(next);
+  }
 
   useEffect(() => {
     async function getWorkspaces() {
@@ -128,6 +168,7 @@ export default function ActiveWorkspaces() {
                       <div className="flex gap-x-2 items-center justify-between">
                         <Link
                           to={paths.workspace.chat(workspace.slug)}
+                          onClick={() => expandWorkspace(workspace.slug)}
                           aria-current={isActive ? "page" : ""}
                           className={`
                             transition-all duration-[200ms]
@@ -147,6 +188,29 @@ export default function ActiveWorkspaces() {
                                 weight="bold"
                               />
                             </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                toggleWorkspace(workspace.slug);
+                              }}
+                              aria-label={
+                                collapsedWorkspaces.has(workspace.slug)
+                                  ? t("thread-list.expand")
+                                  : t("thread-list.collapse")
+                              }
+                              aria-expanded={
+                                !collapsedWorkspaces.has(workspace.slug)
+                              }
+                              className={`border-none p-0 mr-1 shrink-0 flex items-center justify-center transition-transform duration-200 ${
+                                collapsedWorkspaces.has(workspace.slug)
+                                  ? ""
+                                  : "rotate-90"
+                              } ${isActive ? "text-white light:text-blue-800" : "text-zinc-400 light:text-slate-500"}`}
+                            >
+                              <CaretRight size={12} weight="bold" />
+                            </button>
                             <div
                               data-tooltip-id="workspace-name"
                               data-tooltip-content={workspace.name}
@@ -215,7 +279,7 @@ export default function ActiveWorkspaces() {
                           </div>
                         </Link>
                       </div>
-                      {isActive && (
+                      {isActive && !collapsedWorkspaces.has(workspace.slug) && (
                         <ThreadContainer
                           workspace={workspace}
                           isActive={isActive}

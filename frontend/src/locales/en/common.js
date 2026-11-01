@@ -190,6 +190,8 @@ const TRANSLATIONS = {
     "show-older_other": "Show {{count}} older threads",
     "show-less": "Show less",
     "delete-selected": "Delete Selected",
+    collapse: "Collapse thread list",
+    expand: "Expand thread list",
   },
   "workspaces—settings": {
     general: "General Settings",

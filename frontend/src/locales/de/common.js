@@ -182,6 +182,8 @@ const TRANSLATIONS = {
     "show-older_other": "{{count}} ältere Threads anzeigen",
     "show-less": "Weniger anzeigen",
     "delete-selected": "Auswahl löschen",
+    collapse: "Thread-Liste einklappen",
+    expand: "Thread-Liste ausklappen",
   },
   "workspaces—settings": {
     general: "Allgemeine Einstellungen",
