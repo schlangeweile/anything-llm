@@ -1191,3 +1191,39 @@ textarea {
     "Segoe UI Symbol",
     "Noto Color Emoji" !important;
 }
+
+/* Home Assistant add-on UI fixes.
+ *
+ * These two rules used to be appended to the built index.css by the add-on
+ * patch layer. They live here now so the UI fork is the single source of
+ * truth and apply.js only patches server code.
+ */
+
+/* Wide markdown tables: upstream clips them with `.markdown table {
+ * overflow: hidden; }` and has no scroll wrapper. Use the table itself as a
+ * horizontal scroll container on narrow screens. */
+@media (max-width: 600px) {
+  .markdown table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+}
+
+/* Workspace-settings forms: upstream pins every form to `w-1/2` and pads the
+ * page with a fixed `px-16` (64 px per side), which squeezes labels on narrow
+ * windows. Below xl use the full content width; on phones shrink the page
+ * padding to 16 px. Only the workspace-settings page uses these classes. */
+@media (max-width: 1279px) {
+  form.w-1\/2 {
+    width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.px-16.py-6 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
