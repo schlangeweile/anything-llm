@@ -92,9 +92,7 @@ export default function MenuOption({
         >
           {icon}
           <p
-            className={`${
-              isChild ? "text-xs" : "text-sm"
-            } leading-loose whitespace-nowrap overflow-hidden ml-2 ${
+            className={`text-sm leading-loose whitespace-nowrap overflow-hidden ml-2 ${
               isActive
                 ? "text-white font-semibold"
                 : "text-white light:text-black"
