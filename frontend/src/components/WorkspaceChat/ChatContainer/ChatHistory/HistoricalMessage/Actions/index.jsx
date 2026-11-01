@@ -33,7 +33,7 @@ const Actions = ({
       className={`flex w-full flex-wrap items-center gap-y-1 ${role === "user" ? "justify-end" : "justify-between"}`}
     >
       <div className="flex justify-start items-center gap-x-[8px]">
-        <div className="md:group-hover:opacity-100 transition-all duration-300 md:opacity-0 flex justify-start items-center gap-x-[8px]">
+        <div className="opacity-60 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200 flex justify-start items-center gap-x-[8px]">
           <div
             className={`flex justify-start items-center gap-x-[8px] ${role === "user" ? "flex-row-reverse" : ""}`}
           >
