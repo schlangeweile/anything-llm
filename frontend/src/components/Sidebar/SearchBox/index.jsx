@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
-import { Plus, MagnifyingGlass } from "@phosphor-icons/react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Plus, MagnifyingGlass, X } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import paths from "@/utils/paths";
 import Preloader from "@/components/Preloader";
 import debounce from "lodash.debounce";
@@ -17,33 +17,91 @@ const SEARCH_RESULT_SELECTED = "search-result-selected";
 export default function SearchBox({ user, showNewWsModal }) {
   const { t } = useTranslation();
   const searchRef = useRef(null);
+  const containerRef = useRef(null);
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showResults, setShowResults] = useState(false);
   const [searchResults, setSearchResults] = useState(DEFAULT_SEARCH_RESULTS);
-  const handleSearch = debounce(handleSearchDebounced, 500);
 
-  async function handleSearchDebounced(e) {
-    try {
-      const searchValue = e.target.value;
-      setSearchTerm(searchValue);
-      setLoading(true);
-      const searchResults =
-        await Workspace.searchWorkspaceOrThread(searchValue);
-      setSearchResults(searchResults);
-    } catch (error) {
-      console.error(error);
-      setSearchResults(DEFAULT_SEARCH_RESULTS);
-    } finally {
-      setLoading(false);
-    }
+  // Stable debounce instance: recreating it on every render would leave one
+  // pending timer per keystroke.
+  const handleSearch = useMemo(
+    () =>
+      debounce(async (searchValue) => {
+        if (String(searchValue).trim().length < 3) {
+          setShowResults(false);
+          setSearchResults(DEFAULT_SEARCH_RESULTS);
+          setLoading(false);
+          return;
+        }
+        setLoading(true);
+        setShowResults(true);
+        try {
+          const results = await Workspace.searchWorkspaceOrThread(searchValue);
+          setSearchResults(results);
+        } catch (error) {
+          console.error(error);
+          setSearchResults(DEFAULT_SEARCH_RESULTS);
+        } finally {
+          setLoading(false);
+        }
+      }, 500),
+    []
+  );
+
+  function handleChange(event) {
+    const value = event.target.value;
+    setSearchTerm(value);
+    // Close immediately once the term is too short; the debounced request
+    // only controls the results themselves.
+    if (value.trim().length < 3) setShowResults(false);
+    handleSearch(value);
+  }
+
+  function closeResults() {
+    handleSearch.cancel();
+    setShowResults(false);
   }
 
   function handleReset() {
-    searchRef.current.value = "";
+    handleSearch.cancel();
+    if (searchRef.current) searchRef.current.value = "";
     setSearchTerm("");
     setLoading(false);
     setSearchResults(DEFAULT_SEARCH_RESULTS);
+    setShowResults(false);
   }
+
+  function handleClear() {
+    handleReset();
+    searchRef.current?.focus();
+  }
+
+  // Dismiss the overlay on any click outside of the search area, on Escape
+  // and on navigation. Clicking an open thread used to leave the results
+  // covering the sidebar.
+  useEffect(() => {
+    function onPointerDown(event) {
+      if (containerRef.current?.contains(event.target)) return;
+      closeResults();
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, []);
+
+  useEffect(() => {
+    closeResults();
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!showResults) return;
+    function onKeyDown(event) {
+      if (event.key === "Escape") closeResults();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [showResults]);
 
   useEffect(() => {
     window.addEventListener(SEARCH_RESULT_SELECTED, handleReset);
@@ -52,16 +110,27 @@ export default function SearchBox({ user, showNewWsModal }) {
   }, []);
 
   return (
-    <div className="flex gap-x-[5px] w-full items-center h-[32px]">
+    <div
+      ref={containerRef}
+      className="flex gap-x-[5px] w-full items-center h-[32px]"
+    >
       <div className="relative h-full w-full flex">
         <input
           ref={searchRef}
           type="search"
           placeholder={t("common.search")}
-          onChange={handleSearch}
+          onChange={handleChange}
           onReset={handleReset}
-          onFocus={(e) => e.target.select()}
-          className="border-none w-full h-full rounded-lg bg-theme-sidebar-item-default pl-9 focus:pl-4 pr-1 placeholder:text-white/50 light:placeholder:text-slate-500 placeholder:font-semibold outline-none text-theme-text-primary search-input peer text-sm"
+          onFocus={(e) => {
+            e.target.select();
+            if (searchTerm.trim().length >= 3) setShowResults(true);
+          }}
+          // Reopen on click too: after Escape the input can still have focus,
+          // so no focus event fires when the user clicks back into it.
+          onClick={() => {
+            if (searchTerm.trim().length >= 3) setShowResults(true);
+          }}
+          className="border-none w-full h-full rounded-lg bg-theme-sidebar-item-default pl-9 focus:pl-4 pr-8 placeholder:text-white/50 light:placeholder:text-slate-500 placeholder:font-semibold outline-none text-theme-text-primary search-input sidebar-search-input peer text-sm"
         />
         <MagnifyingGlass
           size={14}
@@ -69,23 +138,38 @@ export default function SearchBox({ user, showNewWsModal }) {
           weight="bold"
           hidden={!!searchTerm}
         />
+        {searchTerm.length > 0 && (
+          <button
+            type="button"
+            onClick={handleClear}
+            aria-label={t("common.clear-search")}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center justify-center rounded p-[2px] text-zinc-400 hover:text-white light:text-slate-500 light:hover:text-slate-900"
+          >
+            <X size={12} weight="bold" />
+          </button>
+        )}
       </div>
       <ShortWidthNewWorkspaceButton
         user={user}
         showNewWsModal={showNewWsModal}
       />
-      <SearchResults
-        searchResults={searchResults}
-        searchTerm={searchTerm}
-        loading={loading}
-      />
+      {showResults && (
+        <SearchResults
+          searchResults={searchResults}
+          searchTerm={searchTerm}
+          loading={loading}
+        />
+      )}
     </div>
   );
 }
 
 function SearchResultWrapper({ children }) {
   return (
-    <div className="absolute right-0 top-[6.2%] w-full flex flex-col gap-y-[24px] h-auto bg-theme-modal-border light:bg-theme-bg-primary light:border-2 light:border-theme-modal-border rounded-lg p-[16px] z-10 max-h-[calc(100%-24px)] overflow-y-scroll no-scroll">
+    <div
+      data-search-results="true"
+      className="absolute right-0 top-[6.2%] w-full flex flex-col gap-y-[24px] h-auto bg-theme-modal-border light:bg-theme-bg-primary light:border-2 light:border-theme-modal-border rounded-lg p-[16px] z-10 max-h-[calc(100%-24px)] overflow-y-scroll no-scroll"
+    >
       {children}
     </div>
   );

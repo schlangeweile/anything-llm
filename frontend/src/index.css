@@ -1054,6 +1054,11 @@ does not extend the close button beyond the viewport. */
   filter: grayscale(100%) invert(0) brightness(0) opacity(0.5);
 }
 
+/* The sidebar search has its own always-visible clear button. */
+.sidebar-search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
 .animate-remove {
   animation: fadeAndShrink 800ms forwards;
 }
