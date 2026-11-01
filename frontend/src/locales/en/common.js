@@ -887,6 +887,11 @@ const TRANSLATIONS = {
           "Show only the newest threads in the sidebar and fold older ones behind a toggle. Off by default; the active thread always stays visible.",
         limit: "Threads shown",
       },
+      "wake-lock": {
+        title: "Keep the screen awake",
+        description:
+          "Request a screen wake lock while a response is being generated. Off by default; only works over HTTPS (secure context).",
+      },
       theme: {
         title: "Theme",
         description: "Select your preferred color theme for the application.",

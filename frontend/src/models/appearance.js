@@ -8,7 +8,8 @@ import { safeJsonParse } from "@/utils/request";
  * 'enableSpellCheck' |
  * 'renderHTML' |
  * 'disableAutoScroll' |
- * 'threadListLimit'
+ * 'threadListLimit' |
+ * 'keepScreenAwake'
  * } AvailableSettings - The supported settings for the appearance model.
  */
 
@@ -23,6 +24,10 @@ const Appearance = {
     // 0 = show every thread. A positive value folds older threads behind a
     // toggle; the newest threads and the active thread stay visible.
     threadListLimit: 0,
+    // R9: request a screen wake lock while a reply streams. Off by default;
+    // only effective in a secure context (HTTPS) and silently a no-op where
+    // the Wake Lock API does not exist or the request is rejected.
+    keepScreenAwake: false,
   },
 
   /**

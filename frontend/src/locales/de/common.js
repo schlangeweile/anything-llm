@@ -910,6 +910,11 @@ const TRANSLATIONS = {
           "Nur die neuesten Threads in der Seitenleiste anzeigen und ältere hinter einem Schalter einklappen. Standardmäßig aus; der aktive Thread bleibt immer sichtbar.",
         limit: "Angezeigte Threads",
       },
+      "wake-lock": {
+        title: "Bildschirm wachhalten",
+        description:
+          "Fordert während der Antwortgenerierung einen Screen Wake Lock an. Standardmäßig aus; funktioniert nur über HTTPS (Secure Context).",
+      },
       theme: {
         title: "Farbschema",
         description: "Wählen Sie Ihr bevorzugtes Farbschema für die Anwendung.",

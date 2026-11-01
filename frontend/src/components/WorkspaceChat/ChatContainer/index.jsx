@@ -31,6 +31,7 @@ import { clearPromptInputDraft } from "@/hooks/usePromptInputStorage";
 import { getSessionReasoningEffort } from "@/utils/chat/reasoningEffort";
 import { safeJsonParse } from "@/utils/request";
 import useGreeting from "@/hooks/useGreeting";
+import useWakeLock from "@/hooks/useWakeLock";
 import paths from "@/utils/paths";
 import QuickActions from "@/components/lib/QuickActions";
 import SuggestedMessages from "@/components/lib/SuggestedMessages";
@@ -49,6 +50,7 @@ export default function ChatContainer({
   const navigate = useNavigate();
   const greeting = useGreeting();
   const [loadingResponse, setLoadingResponse] = useState(false);
+  useWakeLock(loadingResponse);
   const [chatHistory, setChatHistory] = useState(knownHistory);
   const [socketId, setSocketId] = useState(null);
   const [websocket, setWebsocket] = useState(null);

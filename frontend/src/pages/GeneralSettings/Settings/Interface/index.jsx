@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import LanguagePreference from "../components/LanguagePreference";
 import ThemePreference from "../components/ThemePreference";
 import ThreadListLimit from "../components/ThreadListLimit";
+import KeepScreenAwake from "../components/KeepScreenAwake";
 
 export default function InterfaceSettings() {
   const { t } = useTranslation();
@@ -29,6 +30,7 @@ export default function InterfaceSettings() {
           <ThemePreference />
           <LanguagePreference />
           <ThreadListLimit />
+          <KeepScreenAwake />
         </div>
       </div>
     </div>
