@@ -41,6 +41,7 @@ import { ChatSidebarProvider } from "./ChatSidebar";
 import SourcesSidebar from "./SourcesSidebar";
 import MemoriesSidebar from "./MemoriesSidebar";
 import ActiveGenerationGuard from "./ActiveGenerationGuard";
+import { THREAD_ACTIVITY_EVENT } from "@/components/Sidebar/ActiveWorkspaces/ThreadContainer";
 
 export default function ChatContainer({
   workspace,
@@ -59,6 +60,21 @@ export default function ChatContainer({
   const pendingMessageChecked = useRef(false);
   const pendingResetRef = useRef(false);
   const activeThreadSlug = threadSlug;
+
+  /**
+   * R5: tell the sidebar that the active thread got a message. threadSlug does
+   * not change when a message is sent in the current thread, so the fetch
+   * effect in ThreadContainer would not run on its own. The server bumps
+   * lastUpdatedAt when the chat is saved; the list can sort locally right away.
+   */
+  function emitThreadActivity() {
+    if (!activeThreadSlug) return;
+    window.dispatchEvent(
+      new CustomEvent(THREAD_ACTIVITY_EVENT, {
+        detail: { threadSlug: activeThreadSlug, timestamp: Date.now() },
+      })
+    );
+  }
 
   const isEmpty =
     chatHistory.length === 0 && !sessionStorage.getItem(PENDING_HOME_MESSAGE);
@@ -149,6 +165,7 @@ export default function ChatContainer({
     setChatHistory(prevChatHistory);
     setMessageEmit("");
     setLoadingResponse(true);
+    emitThreadActivity();
   };
 
   function endSTTSession() {
@@ -254,6 +271,7 @@ export default function ChatContainer({
     setChatHistory(prevChatHistory);
     setMessageEmit("");
     setLoadingResponse(true);
+    emitThreadActivity();
   };
 
   sendCommandRef.current = sendCommand;
