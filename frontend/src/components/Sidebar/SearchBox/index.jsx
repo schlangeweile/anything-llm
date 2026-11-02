@@ -14,7 +14,21 @@ const DEFAULT_SEARCH_RESULTS = {
 };
 
 const SEARCH_RESULT_SELECTED = "search-result-selected";
-export default function SearchBox({ user, showNewWsModal }) {
+
+// Where the result overlay opens. `sidebar` keeps the original behaviour: the
+// overlay is anchored to the sidebar panel (its percentage offset and height
+// are relative to it). `inline` makes the search row the anchor instead, so
+// the overlay opens right below the input - what the mobile drawer needs.
+const RESULT_PLACEMENT = {
+  sidebar: "top-[6.2%] max-h-[calc(100%-24px)]",
+  inline: "top-[calc(100%+6px)] max-h-[60dvh]",
+};
+
+export default function SearchBox({
+  user,
+  showNewWsModal,
+  placement = "sidebar",
+}) {
   const { t } = useTranslation();
   const searchRef = useRef(null);
   const containerRef = useRef(null);
@@ -112,7 +126,9 @@ export default function SearchBox({ user, showNewWsModal }) {
   return (
     <div
       ref={containerRef}
-      className="flex gap-x-[5px] w-full items-center h-[32px]"
+      className={`${
+        placement === "inline" ? "relative " : ""
+      }flex gap-x-[5px] w-full items-center h-[32px]`}
     >
       <div className="relative h-full w-full flex">
         <input
@@ -158,28 +174,31 @@ export default function SearchBox({ user, showNewWsModal }) {
           searchResults={searchResults}
           searchTerm={searchTerm}
           loading={loading}
+          placement={placement}
         />
       )}
     </div>
   );
 }
 
-function SearchResultWrapper({ children }) {
+function SearchResultWrapper({ children, placement = "sidebar" }) {
   return (
     <div
       data-search-results="true"
-      className="absolute right-0 top-[6.2%] w-full flex flex-col gap-y-[24px] h-auto bg-theme-modal-border light:bg-theme-bg-primary light:border-2 light:border-theme-modal-border rounded-lg p-[16px] z-10 max-h-[calc(100%-24px)] overflow-y-scroll no-scroll"
+      className={`absolute right-0 ${
+        RESULT_PLACEMENT[placement] ?? RESULT_PLACEMENT.sidebar
+      } w-full flex flex-col gap-y-[24px] h-auto bg-theme-modal-border light:bg-theme-bg-primary light:border-2 light:border-theme-modal-border rounded-lg p-[16px] z-10 overflow-y-scroll no-scroll`}
     >
       {children}
     </div>
   );
 }
 
-function SearchResults({ searchResults, searchTerm, loading }) {
+function SearchResults({ searchResults, searchTerm, loading, placement }) {
   if (!searchTerm || searchTerm.length < 3) return null;
   if (loading)
     return (
-      <SearchResultWrapper>
+      <SearchResultWrapper placement={placement}>
         <div className="flex flex-col gap-y-[8px] h-[200px] justify-center items-center">
           <Preloader size={5} />
           <p className="text-theme-text-secondary text-xs font-semibold text-center">
@@ -194,7 +213,7 @@ function SearchResults({ searchResults, searchTerm, loading }) {
     searchResults.threads.length === 0
   ) {
     return (
-      <SearchResultWrapper>
+      <SearchResultWrapper placement={placement}>
         <div className="flex flex-col gap-y-[8px] h-[200px] justify-center items-center">
           <p className="text-theme-text-secondary text-xs font-semibold text-center">
             No results found for
@@ -209,7 +228,7 @@ function SearchResults({ searchResults, searchTerm, loading }) {
   }
 
   return (
-    <SearchResultWrapper>
+    <SearchResultWrapper placement={placement}>
       <SearchResultCategory
         name="Workspaces"
         items={searchResults.workspaces?.map((workspace) => ({
