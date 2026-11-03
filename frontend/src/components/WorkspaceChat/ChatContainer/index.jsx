@@ -478,25 +478,20 @@ export default function ChatContainer({
           setAgentSessionActive(false);
           setAgentSessionSocket(null);
           window.dispatchEvent(new CustomEvent(AGENT_SESSION_END));
-          // When the close was triggered by /reset, skip the "Agent session
-          // complete." status - the pending /reset flow will clear history.
+          // The session close is stream plumbing, not conversation: it is
+          // never persisted, so recording the "Agent session complete." status
+          // in the live history only leaves a stray activity block below the
+          // finished answer - and, because that status becomes the last
+          // history item, hides the answer's regenerate action - until a
+          // reload rebuilds the history from the server. Sweep the now-empty
+          // pending placeholder instead.
+          //
+          // When the close was triggered by /reset, skip this entirely - the
+          // pending /reset flow will clear history.
           if (pendingResetRef.current) {
             pendingResetRef.current = false;
           } else {
-            setChatHistory((prev) => [
-              ...prev.filter((msg) => !!msg.content),
-              {
-                uuid: v4(),
-                type: "statusResponse",
-                content: "Agent session complete.",
-                role: "assistant",
-                sources: [],
-                closed: true,
-                error: null,
-                animate: false,
-                pending: false,
-              },
-            ]);
+            setChatHistory((prev) => prev.filter((msg) => !!msg.content));
           }
           setLoadingResponse(false);
           setWebsocket(null);

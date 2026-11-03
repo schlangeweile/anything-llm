@@ -3,14 +3,12 @@ import { useTranslation } from "react-i18next";
 import DOMPurify from "dompurify";
 import { Brain } from "@phosphor-icons/react";
 import AgentAnimation from "@/media/animations/agent-animation.webm";
-import AgentStatic from "@/media/animations/agent-static.png";
 import { renderThoughtMarkdown } from "@/utils/chat/markdown";
 import { formatDuration } from "@/utils/numbers";
 import {
   THOUGHT_REGEX_CLOSE,
   THOUGHT_REGEX_OPEN,
   stripThoughtTags,
-  thoughtLabel,
   useThoughtExpansion,
 } from "../ThoughtContainer";
 import {
@@ -75,7 +73,9 @@ export default function StatusResponse({
     : workingActive
       ? (lastStatusNode?.content ?? t("chat_window.thought_in_progress"))
       : totalDuration
-        ? thoughtLabel(false, totalDuration)
+        ? t("chat_window.thought_for", {
+            duration: formatDuration(totalDuration),
+          })
         : t("chat_window.thoughts");
   const hasStatusNodes = messages.some((m) => m.type !== "thoughtChain");
 
@@ -86,7 +86,6 @@ export default function StatusResponse({
           <ActivityIcon
             active={active}
             thinking={thinkingActive || !hasStatusNodes}
-            hasStatusNodes={hasStatusNodes}
           />
         }
         pending={active}
@@ -171,7 +170,7 @@ const ThoughtNode = memo(function ThoughtNode({ content }) {
   );
 });
 
-function ActivityIcon({ active, thinking, hasStatusNodes }) {
+function ActivityIcon({ active, thinking }) {
   // Thought states use the same brain glyph as the expanded thought nodes;
   // the shimmering header label already signals activity while thinking.
   if (active && thinking) return <Brain className="size-5 flex-shrink-0" />;
@@ -190,14 +189,9 @@ function ActivityIcon({ active, thinking, hasStatusNodes }) {
       </video>
     );
 
-  if (hasStatusNodes)
-    return (
-      <img
-        src={AgentStatic}
-        alt="Agent complete"
-        className="w-5 h-5 flex-shrink-0 light:invert light:opacity-50"
-      />
-    );
-
+  // A finished chain keeps the brain glyph of a model thought. The old
+  // "agent done" bitmap was a 1805x1805 PNG in a 20px slot whose alt text
+  // ("Agent complete") leaked into the row whenever the image loaded slowly
+  // or failed, which is far worse than sharing the glyph.
   return <Brain className="size-5 flex-shrink-0" />;
 }

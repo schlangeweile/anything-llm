@@ -1537,6 +1537,7 @@ const TRANSLATIONS = {
     response_failed_reason: "Grund: {{reason}}",
     thought_in_progress: "Das Modell denkt…",
     thoughts: "Gedanken",
+    thought_for: "Nachgedacht für {{duration}}",
     leave_generating: {
       title: "Stoppen der Antwortgenerierung?",
       description:
